@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Load a basic WebMap - 4.10</title>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    
+    #optionsDiv {
+	  position: absolute;
+      top: 0px;
+      right: 0px;
+      max-width: 450px;
+      background-color: dimgray;
+      color: white;
+	  text-align: center;
+      z-index: 30;
+      padding: 10px;
+      border-radius: 5px;
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.10/esri/css/main.css">
+
+  <script src="https://js.arcgis.com/4.10/"></script>
+
+  <script>
+    require([
+      "esri/views/MapView",
+      "esri/WebMap",
+      "esri/widgets/Legend",
+      "esri/layers/GraphicsLayer",
+		  "esri/symbols/SimpleMarkerSymbol",
+		  "esri/symbols/PointSymbol3D",
+      "esri/symbols/ObjectSymbol3DLayer",
+		  "esri/tasks/QueryTask",
+		  "esri/tasks/support/Query",
+		  "dojo/dom",
+		  "dojo/on"
+    ], function(
+      MapView, WebMap , Legend , GraphicsLayer, SimpleMarkerSymbol,PointSymbol3D, ObjectSymbol3DLayer, QueryTask, Query, dom,on , arrayUtils
+    ) {
+      
+      		 
+		  
+      /************************************************************
+       * Creates a new WebMap instance. A WebMap must reference
+       * a PortalItem ID that represents a WebMap saved to
+       * arcgis.com or an on-premise portal.
+       *
+       * To load a WebMap from an on-premise portal, set the portal
+       * url with esriConfig.portalUrl.
+       ************************************************************/
+      var webmap = new WebMap({
+        portalItem: { // autocasts as new PortalItem()
+          id: "97bb6d9105c54feb9258d03b9b2abe61"
+        }
+      });
+      
+
+      /************************************************************
+       * Set the WebMap instance to the map property in a MapView.
+       ************************************************************/
+      var view = new MapView({
+        map: webmap,
+        container: "viewDiv"
+      });
+      
+
+      /***************Insert legend********************/
+      
+      
+        view.when(function() {
+				var legend3d = new Legend({
+					id: "legend_3d",
+					view: view
+				})
+				view.ui.add(legend3d, "bottom-left");
+			  });
+			             /***********insert query************************/
+    
+      function doQuery(){
+			var featureLayerUrl = view.map.layers.items[0].url + "/" + view.map.layers.items[0].layerId;
+
+			var qTask = new QueryTask({
+		        url: featureLayerUrl
+		    });
+			var params = new Query({
+	        	returnGeometry: true,
+	        	outFields: ["*"]
+	      	});
+
+        	var expressionSign = dom.byId("Population");
+      		var val = dom.byId("valInput").value;
+        	params.where = "mag" + expressionSign.value + val;
+
+	        qTask.execute(params)
+	          .then(getResults)
+	          .otherwise(promiseRejected);
+		}
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+  <div id="optionsDiv">
+		  Population
+		<select id="signSelect">
+		  <option value=">">is greater than</option>
+		  <option value="<">is less than</option>
+		  <option value="=">is equal to</option>
+		</select>
+		<input id="valInput" value="1000000" />
+		<button id="doBtn">Execute</button>
+		<br>
+		<p><span id="printResults"></span></p>
+	</div>
+</body>
+
+</html>
